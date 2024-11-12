@@ -1,0 +1,11 @@
+--- a simple MLS Library in Javascript ---
+
+- only implement MLS for a text-based messaging platform
+
+- not all functions described in the doc need to be implemented
+
+relevant docs:
+
+https://www.rfc-editor.org/rfc/rfc9420.html
+https://docs.rs/openmls/latest/openmls/ (Rust implemenation; use as a reference ONLY)
+https://github.com/cisco/mlspp (C++ implementation; use as a reference ONLY)

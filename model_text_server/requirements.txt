@@ -1,0 +1,28 @@
+*** MUST USE JAVASCRIPT FOR THIS APPLICATION ***
+
+Functionalities:
+
+1) server must be able to receive and verify client credentials
+
+2) server must be able to verify identity of clients sending messages
+2a) if we have time (we probably don't), we can modify 2) to only verify whether the client
+is a valid client for the application, but obfuscate the client's identity to the server
+(client's identity will still be known to the receiver)
+
+3) server must route and store private messages between clients (1 on 1 messaging)
+
+4) server must be able to initialize and store group chat data for clients and send data to all connected
+clients (initialize a group, store client IDs as contacts to the group; all members within the group should be able to access the set of connected IDs)
+
+5) server must be able to store messages from group chats and have these messages delivered to all clients connected to the group chat. 
+Messages should always be visible to members of the group, but only to members of the group.
+5a) for testing the MLS implementation, there should be a function for the server to print messages from group chats (a backdoor)
+ - 5a should be implemented later (when the SimpleMLS library is done)
+
+6) server must be able to remove members from existing group chats when requested by client with the required permissions
+
+7) server should make messages from a group chat inaccessible to members removed from the group
+7a) for testing the MLS implementation, there should be a function for the client to attempt to infiltrate the group after being removed (a backdoor)
+ - 7a should be implemented later (when the SimpleMLS library is done)
+
+---- more requirements to be added when necessary ----

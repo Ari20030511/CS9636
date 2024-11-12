@@ -1,0 +1,22 @@
+*** MUST USE JAVASCRIPT FOR THIS APPLICATION ***
+
+Functionalities:
+
+1) client must be able to authenticate with the server
+
+2) client must be able to communicate through text messages with other clients
+through the server (1 on 1 private messages, sending AND receiving)
+
+3) clients must be able to form group chats with other clients through the server
+(initialize a group, add contacts to the group; other members within the group should be able to see the entire group)
+
+4) clients must be able to send messages to the group chat and have these messages delivered
+to all clients connected to the group chat through the server (messages should be stored on the server for this model)
+
+5) clients must be able to remove members from existing group chats (only if the client has the required permissions)
+
+6) clients that are removed from a group chat should no longer be able to access messages for the group
+6a) for testing the MLS implementation, there should be a function for the client to attempt to infiltrate the group after being removed (a backdoor)
+ - 6a should be implemented later (when the SimpleMLS library is done)
+
+---- more requirements to be added when necessary ----
