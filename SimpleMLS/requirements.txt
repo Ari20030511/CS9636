@@ -7,5 +7,8 @@
 relevant docs:
 
 https://www.rfc-editor.org/rfc/rfc9420.html
+
+https://github.com/dajiaji/hpke-js (Open Source HPKE implementation; can be used to handle encryption)
+
 https://docs.rs/openmls/latest/openmls/ (Rust implemenation; use as a reference ONLY)
 https://github.com/cisco/mlspp (C++ implementation; use as a reference ONLY)
