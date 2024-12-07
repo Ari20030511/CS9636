@@ -1,0 +1,16 @@
+{
+  "name": "mls-project",
+  "version": "1.0.0",
+  "description": "An MLS implementation with testing",
+  "main": "MLS.js",
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+  },
+  "dependencies": {
+    "hpke-js": "^1.0.0"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  }
+}
