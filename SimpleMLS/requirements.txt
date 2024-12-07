@@ -6,6 +6,8 @@
    - functions to skip:
    -  3.3. External Joins - focus on private groups; external joins are a feature mostly for public groups
    -  5.3.2. Credential Expiry and Revocation - as outlined in the section, clients with expired credentials
+   -  5.3.3. Uniquely Identifying Clients - not a critical requirement; can be ommitted in a simple implementation
+
 will likely be accepted in a lot of cases. In a simplified implementation, we can simply choose not to worry about expiration.
 
 relevant docs:
