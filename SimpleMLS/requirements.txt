@@ -3,6 +3,10 @@
 - only implement MLS for a text-based messaging platform
 
 - not all functions described in the doc need to be implemented
+   - functions to skip:
+   -  3.3. External Joins - focus on private groups; external joins are a feature mostly for public groups
+   -  5.3.2. Credential Expiry and Revocation - as outlined in the section, clients with expired credentials
+will likely be accepted in a lot of cases. In a simplified implementation, we can simply choose not to worry about expiration.
 
 relevant docs:
 
