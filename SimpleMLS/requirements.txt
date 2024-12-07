@@ -7,8 +7,25 @@
    -  3.3. External Joins - focus on private groups; external joins are a feature mostly for public groups
    -  5.3.2. Credential Expiry and Revocation - as outlined in the section, clients with expired credentials
    -  5.3.3. Uniquely Identifying Clients - not a critical requirement; can be ommitted in a simple implementation
-
 will likely be accepted in a lot of cases. In a simplified implementation, we can simply choose not to worry about expiration.
+
+
+
+Proposal types(section 7):
+0x0001 - add
+0x0002 - update
+0x0003 - remove
+0x0004 - psk
+0x0005 - reinit
+0x0006 - external_init
+0x0007 - group_context_extensions
+
+Extension types:
+0x0001 - application_id
+0x0002 - ratchet_tree
+0x0003 - required_capabilities
+0x0004 - external_pub
+0x0005 - external_senders
 
 relevant docs:
 
