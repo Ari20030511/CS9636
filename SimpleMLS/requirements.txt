@@ -27,6 +27,17 @@ Extension types:
 0x0004 - external_pub
 0x0005 - external_senders
 
+Requirements from Section 14(only implement if we have time):
+
+- Applications MUST have an established way to resolve conflicting Commit messages for the same epoch. 
+  - can either prevent conflicting messages from occurring in the first place, 
+  - or develop rules for deciding which Commit out of several sent in an epoch will be canonical. 
+The approach chosen MUST minimize the amount of time that forked or previous group states are kept in memory, and promptly delete them once they're no longer necessary
+to ensure forward secrecy.
+- The generation of Commit messages MUST NOT modify a client's state, 
+since the client doesn't know at that time whether the changes implied by the Commit message will conflict with another Commit or not. 
+- Similarly, the Welcome message corresponding to a Commit MUST NOT be delivered to a new joiner until it's clear that the Commit has been accepted.
+
 relevant docs:
 
 https://www.rfc-editor.org/rfc/rfc9420.html
