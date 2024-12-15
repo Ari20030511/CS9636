@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,50 +15,142 @@
         }
     </style>
 </head>
+
 <body>
-<h1>Chat App</h1>
-<div id="messages"></div>
-<input type="text" id="message" placeholder="Type a message...">
-<button onclick="sendMessage()">Send</button>
+    <div id="login-section">
+        <input type="text" id="username-input" placeholder="username" />
+        <br />
+        <input type="password" id="password-input" placeholder="password" />
+        <br />
+        <button id="login-btn">Log In</button>
+        <br />
+        <div id="login-info-section"></div>
+    </div>
+    <div id="chat-section">
+        <h1>Chat App</h1>
+        <div id="messages"></div>
+        <input type="text" id="message" placeholder="Type a message..." />
+        <button id="send-message-btn">Send</button>
+    </div>
 
-<script>
-    // Create WebSocket connection to the server
-    const ws = new WebSocket('ws://localhost:5000');
 
-    const messagesDiv = document.getElementById('messages');
-    const messageInput = document.getElementById('message');
+    <script>
+        let loginInfoSection = document.getElementById('login-section');
+        let chatSection = document.getElementById('chat-section');
 
-    // Function to append message to the chat display
-    function appendMessage(username, message) {
-        const messageElement = document.createElement('p');
-        messageElement.textContent = `${username}: ${message}`;  // Include username with the message
-        messagesDiv.appendChild(messageElement);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    }
+        // Display Login section, and disable chat section
+        chatSection.style.display = "none";
 
-    // Event listener for incoming messages from the server
-    ws.onmessage = function(event) {
-        const message = event.data;
-        appendMessage('Server', message);  // Display the message with "Server" as the sender
-    };
+        // Set up WebSocket property
+        function webSocketInitializer(username) {
+            // Create WebSocket connection to the server
+            const ws = new WebSocket(`ws://localhost:5000/?username=${username}`);
 
-    // Send message to the server
-    function sendMessage() {
-        const message = messageInput.value;
-        if (message) {
-            const username = 'You';  // Placeholder for the client's username (would be dynamic if needed)
-            ws.send(message);  // Send the message to the server
-            appendMessage(username, message);  // Display the sent message with "You" as the sender
-            messageInput.value = ''; // Clear the input field
+            const messagesDiv = document.getElementById('messages');
+            const messageInput = document.getElementById('message');
+
+            // Function to append message to the chat display
+            function appendMessage(username, message) {
+                const messageElement = document.createElement('p');
+                messageElement.textContent = `${username}: ${message}`;  // Include username with the message
+                messagesDiv.appendChild(messageElement);
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+
+            // Event listener for incoming messages from the server
+            ws.onmessage = function (event) {
+                const message = event.data;
+                appendMessage('Server', message);  // Display the message with "Server" as the sender
+            };
+
+            // Send message to the server
+            function sendMessage() {
+                const message = messageInput.value;
+                if (message) {
+                    const username = 'You';  // Placeholder for the client's username (would be dynamic if needed)
+                    ws.send(message);  // Send the message to the server
+                    appendMessage(username, message);  // Display the sent message with "You" as the sender
+                    messageInput.value = ''; // Clear the input field
+                }
+            }
+
+            // Add event listener for Enter key to trigger sendMessage
+            messageInput.addEventListener('keydown', function (event) {
+                if (event.key === 'Enter') {
+                    sendMessage();  // Send the message when Enter is pressed
+                }
+            });
+
+            // Add event listener for send message button
+            document.getElementById('send-message-btn').addEventListener('click', function (event) {
+                sendMessage();
+            });
         }
-    }
 
-    // Add event listener for Enter key to trigger sendMessage
-    messageInput.addEventListener('keydown', function(event) {
-        if (event.key === 'Enter') {
-            sendMessage();  // Send the message when Enter is pressed
-        }
-    });
-</script>
+        // Add event listener for login form button to perform login
+        document.getElementById('login-btn').addEventListener('click', async function () {
+            let username_text = document.getElementById('username-input').value;
+            let password_text = document.getElementById('password-input').value;
+
+            if (username_text === '' || password_text === '') {
+                let msg = document.createElement('h3');
+                msg.innerText = 'Please fill username and password to login!';
+                msg.style.color = 'red';
+
+                let infoSection = document.getElementById('login-info-section');
+                infoSection.innerHTML = '';
+                infoSection.appendChild(msg);
+
+                return;
+            }
+
+            let response = await fetch("http://localhost:5000/login", {
+                method: "POST",
+                body: JSON.stringify({
+                    username: username_text,
+                    password: password_text
+                }),
+                headers: {
+                    "Content-type": "application/json; charset=UTF-8"
+                }
+            });
+
+            let data = await response.json();
+            if (data.success) {
+                let msg = document.createElement('h3');
+                msg.innerText = 'Login successfully!';
+                msg.style.color = 'green';
+
+                let infoSection = document.getElementById('login-info-section');
+                infoSection.innerHTML = '';
+                infoSection.appendChild(msg);
+
+                webSocketInitializer(username_text);
+                setTimeout(function () {
+                    loginInfoSection.style.display = 'none';
+                    chatSection.style.display = 'block';
+                }, 500);
+
+                return;
+
+
+            } else {
+                let msg = document.createElement('h3');
+                msg.innerText = 'Login informaiton wrong, please try again!';
+                msg.style.color = 'red';
+
+                let infoSection = document.getElementById('login-info-section');
+                infoSection.innerHTML = '';
+                infoSection.appendChild(msg);
+
+                document.getElementById('username-input').value = '';
+                document.getElementById('password-input').value = '';
+
+                return;
+            }
+
+        });
+    </script>
 </body>
+
 </html>

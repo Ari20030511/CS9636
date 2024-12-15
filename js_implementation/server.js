@@ -1,8 +1,39 @@
+const express = require('express');
+const cors = require('cors');
 const WebSocket = require('ws');
-const wss = new WebSocket.Server({ port: 5000 });
+const url = require('url');
+
+// const WebSocket = require('ws');
+// const wss = new WebSocket.Server({ port: 5000 });
+
+const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cors());
+const server = app.listen(5000);
+const wss = new WebSocket.WebSocketServer({
+    server: server
+});
+
 
 let clients = {};  // Store clients by their usernames
 let groups = {};  // Store groups with group name as key and group data as value
+
+// Temporary storing user's username && password
+let database_users = [
+    {
+        username: 'user1',
+        password: 'pass1'
+    },
+    {
+        username: 'user2',
+        password: 'pass2'
+    },
+    {
+        username: 'user3',
+        password: 'pass3'
+    }
+];
 
 // Helper function to generate a unique 8-digit username
 function generateUsername() {
@@ -13,12 +44,57 @@ function generateUsername() {
     return username;
 }
 
-wss.on('connection', (ws) => {
+// Function to check if username and password given correctly in the database
+function checkUserPass(username, password) {
+    for (let i = 0; i < database_users.length; i++) {
+        if (database_users[i].username === username) {
+            if (database_users[i].password === password) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    };
+
+    return false
+}
+
+// HTTP login request
+app.post('/login', (req, res) => {
+    // Validate If input existed
+    if (!(
+        req.body.username &&
+        req.body.password
+    ))
+        return res.status(400).json({ success: false, message: "Pleases complete the login form!" });
+
+    // Find user in database
+    let username = req.body.username;
+    let password = req.body.password;
+    let login_result = checkUserPass(username, password);
+
+    // Return login result
+    if (login_result) {
+        return res.status(201).json({ success: true, message: 'Log in successful!' });
+    } else {
+        return res.status(500).json({ success: false, message: 'Log in fails!' });
+    }
+});
+
+wss.on('connection', (ws, req) => {
+    /*
     let username = generateUsername();  // Assign a unique 8-digit username to the client
     clients[username] = { ws, groups: [] };  // Store client with the generated username and group memberships
 
     // Notify the client of their unique username
     ws.send(`Welcome! Your unique username is ${username}. You can now send direct messages using /dm <username> <message>.`);
+    */
+
+    let username = (url.parse(req.url, true).query).username; // Get username from request link
+    clients[username] = ws;  // Store client with the generated username
+
+    // Notify the client with their username
+    ws.send(`Welcome, ${username}! You can now send direct messages using /dm <username> <message>.`);
 
     // Handle incoming messages
     ws.on('message', (message) => {
