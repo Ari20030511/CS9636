@@ -48,7 +48,7 @@ let clients = {}; // Store WebSocket connections by username
 
 // Handle WebSocket connections
 wss.on('connection', (ws, req) => {
- 
+
     const username = new URLSearchParams(req.url.substring(1)).get('username');
 
     if (!username) {
@@ -90,12 +90,12 @@ wss.on('connection', (ws, req) => {
                 console.error('Error fetching friends:', err);
                 return;
             }
-    
+
             // Extract usernames and ensure the result is an array
             const friends = Array.isArray(friendResults)
                 ? friendResults.map(friend => friend.username)
                 : [];
-    
+
             if (!Array.isArray(friends)) {
                 console.error('Friends list is not an array!!!!', friends); // Log the incorrect format
                 process.stdout.write('This is an alternative to console.logdfdfdsdfas\n');
@@ -103,13 +103,13 @@ wss.on('connection', (ws, req) => {
                 console.log('Processed friends array:', friends); // Log the valid array
                 process.stdout.write('This is an alternative to console.log\n');
             }
-    
+
             // Update the User instance with friends data
             if (!users[username]) {
                 users[username] = new User(username, {}); // Ensure the User instance exists
             }
             users[username].friends = friends; // Assign the friends list
-    
+
             // Send the friends list to the connected client
             ws.send(
                 JSON.stringify({
@@ -120,7 +120,7 @@ wss.on('connection', (ws, req) => {
             );
         }
     );
-    
+
 
     // Handle incoming messages
     ws.on('message', (data) => {

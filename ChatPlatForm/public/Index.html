@@ -184,7 +184,7 @@ function login() {
 
             document.getElementById('loginForm').style.display = 'none';
             document.getElementById('chatContainer').style.display = 'flex';
-            document.getElementById('messageForm').style.display = 'flex'; 
+            document.getElementById('messageForm').style.display = 'flex';
             document.getElementById('friendForm').style.display = 'flex';
 
             connectWebSocket(username);
@@ -301,7 +301,7 @@ function updateFriendList() {
     // Check if user.friends is an array
     if (!Array.isArray(user.friends)) {
         alert("user.friends is not an array!");
-        alert('user.friends:', user.friends); 
+        alert('user.friends:', user.friends);
         return;
     }
 
