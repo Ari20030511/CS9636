@@ -84,76 +84,76 @@
     </style>
 </head>
 <body>
-<!-- Register Form -->
-<div id="registerForm">
-    <h2>Register</h2>
-    <input type="text" id="newUsername" placeholder="Username" />
-    <input type="password" id="newPassword" placeholder="Password" />
-    <button onclick="register()">Register</button>
-    <button onclick="showLoginForm()">Back to Login</button>
-</div>
-
-<!-- Login Form -->
-<div id="loginForm">
-    <h2>Login</h2>
-    <input type="text" id="username" placeholder="Username" />
-    <input type="password" id="password" placeholder="Password" />
-    <button onclick="login()">Login</button>
-    <button onclick="showRegisterForm()">Register</button>
-</div>
-
-<!-- Chat Container -->
-<div id="chatContainer">
-    <h2>Chat</h2>
-    <div id="messages"></div>
-
-    <!-- Add Friend Form -->
-    <form id="friendForm" onsubmit="addFriend(event)">
-        <input type="text" id="friendUsername" placeholder="Add Friend (Username)" />
-        <button type="submit">Add Friend</button>
-    </form>
-
-    <!-- Message Form -->
-    <form id="messageForm" onsubmit="sendMessage(event)">
-        <input type="text" id="recipientInput" placeholder="Recipient's username" />
-        <input type="text" id="messageInput" placeholder="Type a message" />
-        <button type="submit">Send</button>
-    </form>
-
-    <!-- Friends List -->
-    <div id="friendsContainer">
-        <h3>Your Friends</h3>
-        <ul id="friendsList"></ul>
+    <!-- Register Form -->
+    <div id="registerForm">
+        <h2>Register</h2>
+        <input type="text" id="newUsername" placeholder="Username" />
+        <input type="password" id="newPassword" placeholder="Password" />
+        <button onclick="register()">Register</button>
+        <button onclick="showLoginForm()">Back to Login</button>
     </div>
-</div>
 
-<script>
-    let ws;
-    let currentUsername;
-    let user = { friends: [], chatHistory: [] };
+    <!-- Login Form -->
+    <div id="loginForm">
+        <h2>Login</h2>
+        <input type="text" id="username" placeholder="Username" />
+        <input type="password" id="password" placeholder="Password" />
+        <button onclick="login()">Login</button>
+        <button onclick="showRegisterForm()">Register</button>
+    </div>
 
-    // Show Register Form
-    function showRegisterForm() {
-        document.getElementById('loginForm').style.display = 'none';
-        document.getElementById('registerForm').style.display = 'flex';
-    }
+    <!-- Chat Container -->
+    <div id="chatContainer">
+        <h2>Chat</h2>
+        <div id="messages"></div>
 
-    // Show Login Form
-    function showLoginForm() {
-        document.getElementById('registerForm').style.display = 'none';
-        document.getElementById('loginForm').style.display = 'flex';
-    }
+        <!-- Add Friend Form -->
+        <form id="friendForm" onsubmit="addFriend(event)">
+            <input type="text" id="friendUsername" placeholder="Add Friend (Username)" />
+            <button type="submit">Add Friend</button>
+        </form>
 
-    // Register a new user
-    function register() {
-        const username = document.getElementById('newUsername').value;
-        const password = document.getElementById('newPassword').value;
+        <!-- Message Form -->
+        <form id="messageForm" onsubmit="sendMessage(event)">
+            <input type="text" id="recipientInput" placeholder="Recipient's username" />
+            <input type="text" id="messageInput" placeholder="Type a message" />
+            <button type="submit">Send</button>
+        </form>
 
-        fetch('http://localhost:3000/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password })
-        })
+        <!-- Friends List -->
+        <div id="friendsContainer">
+            <h3>Your Friends</h3>
+            <ul id="friendsList"></ul>
+        </div>
+    </div>
+
+    <script>
+        let ws;
+        let currentUsername;
+        let user = { friends: [], chatHistory: [] };
+
+        // Show Register Form
+        function showRegisterForm() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('registerForm').style.display = 'flex';
+        }
+
+        // Show Login Form
+        function showLoginForm() {
+            document.getElementById('registerForm').style.display = 'none';
+            document.getElementById('loginForm').style.display = 'flex';
+        }
+
+        // Register a new user
+        function register() {
+            const username = document.getElementById('newUsername').value;
+            const password = document.getElementById('newPassword').value;
+
+            fetch('http://localhost:3000/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
@@ -163,157 +163,164 @@
                     alert(data.message);
                 }
             });
-    }
+        }
 
-    // Log in a user
-    function login() {
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
+        // Log in a user
+function login() {
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
 
-        fetch('http://localhost:3000/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password })
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    currentUsername = username;
-                    user.friends = data.friends;  // Store the friends list in user.friends
-                    user.chatHistory = data.chatHistory;  // Store the chat history
+    fetch('http://localhost:3000/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            currentUsername = username;
+            user.friends = data.friends;  // Store the friends list in user.friends
+            user.chatHistory = data.chatHistory;  // Store the chat history
 
-                    document.getElementById('loginForm').style.display = 'none';
-                    document.getElementById('chatContainer').style.display = 'flex';
-                    document.getElementById('messageForm').style.display = 'flex';
-                    document.getElementById('friendForm').style.display = 'flex';
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('chatContainer').style.display = 'flex';
+            document.getElementById('messageForm').style.display = 'flex';
+            document.getElementById('friendForm').style.display = 'flex';
 
-                    connectWebSocket(username);
+            connectWebSocket(username);
 
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error during login:', error);
+    });
+}
+
+        // Connect to WebSocket server
+        function connectWebSocket(username) {
+            ws = new WebSocket(`ws://localhost:3000/?username=${username}`);
+            ws.onopen = function() {
+                console.log('WebSocket connected');
+            };
+
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+
+                if (data.chatHistory && data.chatHistory.length > 0) {
+                    // Restore chat history when received and it's not empty
+                    restoreChatHistory(data.chatHistory);
+                } else if (data.friends) {
+                    // Update the friends list when a friend is added
+                    user.friends = data.friends;  // Update the friends array
+                    alert("data.friends: " + data.friends);
+                    updateFriendList();  // Update the UI with the new friends list
                 } else {
-                    alert(data.message);
+                    displayMessage(data.sender, data.message);
                 }
-            })
-            .catch(error => {
-                console.error('Error during login:', error);
-            });
-    }
+};
 
-    // Connect to WebSocket server
-    function connectWebSocket(username) {
-        ws = new WebSocket(`ws://localhost:3000/?username=${username}`);
-        ws.onopen = function() {
-            console.log('WebSocket connected');
-        };
+            ws.onclose = function() {
+                console.log('WebSocket connection closed');
+            };
+        }
 
-        ws.onmessage = function(event) {
-            const data = JSON.parse(event.data);
+        // Display a message in the chat
+        function displayMessage(sender, message) {
+            const messageElement = document.createElement('div');
+            messageElement.textContent = `${sender}: ${message}`;
+            document.getElementById('messages').appendChild(messageElement);
+        }
 
-            if (data.chatHistory && data.chatHistory.length > 0) {
-                // Restore chat history when received and it's not empty
-                restoreChatHistory(data.chatHistory);
-            } else if (data.friends) {
-                // Update the friends list when a friend is added
-                user.friends = data.friends;  // Update the friends array
-                updateFriendList();  // Update the UI with the new friends list
-            } else if (data.message && data.sender) {
-                displayMessage(data.sender, data.message);  // Display message from WebSocket
-            }
-        };
-
-        ws.onclose = function() {
-            console.log('WebSocket connection closed');
-        };
-    }
-
-    // Display a message in the chat
-    function displayMessage(sender, message) {
-        const messageElement = document.createElement('div');
-        messageElement.textContent = `${sender}: ${message}`;
-        document.getElementById('messages').appendChild(messageElement);
-    }
-
-    // Restore chat history (this should be done on login)
-    function restoreChatHistory(chatHistory) {
-        const chatMessages = chatHistory || user.chatHistory;
-        chatMessages.forEach(msg => {
+        // Restore chat history (this should be done on login)
+        function restoreChatHistory(chatHistory) {
+            const chatMessages = chatHistory || user.chatHistory;
+            chatMessages.forEach(msg => {
             const sender = msg.sender_name || 'Unknown'; // Use 'Unknown' if sender_name is not defined
             displayMessage(sender, msg.message);
-        });
-    }
+    });
+}
 
-    // Send a message
-    function sendMessage(event) {
-        event.preventDefault();
-        const message = document.getElementById('messageInput').value;
-        const recipient = document.getElementById('recipientInput').value;
+        // Send a message
+        function sendMessage(event) {
+            event.preventDefault();
+            const message = document.getElementById('messageInput').value;
+            const recipient = document.getElementById('recipientInput').value;
 
-        if (message.trim() === '' || recipient.trim() === '') {
-            alert('Message and recipient are required!');
-            return;
+            if (message.trim() === '' || recipient.trim() === '') {
+                alert('Message and recipient are required!');
+                return;
+            }
+
+            const data = {
+                action: 'sendMessage',
+                sender: currentUsername,
+                recipient: recipient,
+                message: message
+            };
+
+            ws.send(JSON.stringify(data));
+
+            displayMessage('You', message);  // Show the sent message in chat
+
+            // Clear input fields
+            document.getElementById('messageInput').value = '';
+            document.getElementById('recipientInput').value = '';
         }
 
-        const data = {
-            action: 'sendMessage',
-            sender: currentUsername,
-            recipient: recipient,
-            message: message
-        };
+        // Add a friend
+        function addFriend(event) {
+            event.preventDefault();
+            const friendUsername = document.getElementById('friendUsername').value;
 
-        ws.send(JSON.stringify(data));
+            if (friendUsername.trim() === '') {
+                alert('Friend username is required!');
+                return;
+            }
 
-        displayMessage('You', message);  // Show the sent message in chat
+            const data = {
+                action: 'addFriend',
+                username: currentUsername,
+                friendUsername: friendUsername
+            };
 
-        // Clear input fields
-        document.getElementById('messageInput').value = '';
-        document.getElementById('recipientInput').value = '';
-    }
+            ws.send(JSON.stringify(data));
 
-    // Add a friend
-    function addFriend(event) {
-        event.preventDefault();
-        const friendUsername = document.getElementById('friendUsername').value;
-
-        if (friendUsername.trim() === '') {
-            alert('Friend username is required!');
-            return;
+            // Clear the input field
+            document.getElementById('friendUsername').value = '';
         }
 
-        const data = {
-            action: 'addFriend',
-            username: currentUsername,
-            friendUsername: friendUsername
-        };
+        // Update the friends list dynamically
+function updateFriendList() {
 
-        ws.send(JSON.stringify(data));
+    const friendsList = document.getElementById('friendsList');
 
-        // Clear the input field
-        document.getElementById('friendUsername').value = '';
+    friendsList.innerHTML = ''; // Clear current list
+
+    // Check if user.friends is an array
+    if (!Array.isArray(user.friends)) {
+        alert("user.friends is not an array!");
+        alert('user.friends:', user.friends);
+        return;
     }
 
-    // Update the friends list dynamically
-    function updateFriendList() {
-        const friendsList = document.getElementById('friendsList');
-        friendsList.innerHTML = ''; // Clear current list
-
-        if (!Array.isArray(user.friends)) {
-            alert('user.friends is not an array!');
-            return;
-        }
-
-        if (user.friends.length === 0) {
-            const noFriendsMessage = document.createElement('li');
-            noFriendsMessage.textContent = 'No friends to display.';
-            friendsList.appendChild(noFriendsMessage);
-            return;
-        }
-
-        user.friends.forEach(friend => {
-            const li = document.createElement('li');
-            li.textContent = friend;
-            friendsList.appendChild(li);
-        });
+    if (user.friends.length === 0) {
+        const noFriendsMessage = document.createElement('li');
+        noFriendsMessage.textContent = 'No friends to display.';
+        friendsList.appendChild(noFriendsMessage);
+        return;
     }
 
-</script>
+    // If we reach here, user.friends is an array and can be iterated
+    user.friends.forEach(friend => {
+        const li = document.createElement('li');
+        li.textContent = friend;
+        friendsList.appendChild(li);
+    });
+
+}
+
+    </script>
 </body>
 </html>

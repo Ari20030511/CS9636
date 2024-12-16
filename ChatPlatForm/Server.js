@@ -1,55 +1,54 @@
 const express = require('express');
-const cors = require('cors');
 const WebSocket = require('ws');
-const url = require('url');
+const path = require('path');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const User = require('./User');
+const bcrypt = require('bcryptjs');
+const mysql = require('mysql2');
 
+// Create a connection to the database
+const db = mysql.createConnection({
+    host: 'localhost', // The host of your MySQL server
+    user: 'root', // Your MySQL username (usually 'root' for local development)
+    password: '', // Your MySQL password
+    database: 'chat_app' // The name of your database (make sure it's 'chat_app' as created earlier)
+});
+
+// Connect to MySQL
+db.connect((err) => {
+    if (err) {
+        console.error('Error connecting to the database:', err);
+        return;
+    }
+    console.log('Connected to the MySQL database');
+});
+
+// Initialize Express app
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
-const server = app.listen(3000);
-const wss = new WebSocket.WebSocketServer({
-    server: server
+app.use(bodyParser.json());
+
+// Serve static files (your frontend)
+app.use(express.static(path.join(__dirname, 'public')));
+
+const server = app.listen(3000, () => {
+    console.log('Server started on http://localhost:3000');
 });
 
-let clients = {};  // Store clients by their usernames
-let groups = {};  // Store groups with group name as key and group data as value
+// Create WebSocket server
+const wss = new WebSocket.Server({ server: server });
 
-// Temporary storing user's username && password
-let database_users = [
-    { username: 'user1', password: 'pass1' },
-    { username: 'user2', password: 'pass2' },
-    { username: 'user3', password: 'pass3' }
-];
+let users = {};
+let clients = {}; // Store WebSocket connections by username
 
-// Function to check if username and password are correct
-function checkUserPass(username, password) {
-    for (let i = 0; i < database_users.length; i++) {
-        if (database_users[i].username === username) {
-            return database_users[i].password === password;
-        }
-    }
-    return false;
-}
 
-// HTTP login request
-app.post('/login', (req, res) => {
-    if (!(req.body.username && req.body.password))
-        return res.status(400).json({ success: false, message: "Please complete the login form!" });
 
-    let username = req.body.username;
-    let password = req.body.password;
-    let login_result = checkUserPass(username, password);
-
-    if (login_result) {
-        return res.status(201).json({ success: true, message: 'Log in successful!' });
-    } else {
-        return res.status(500).json({ success: false, message: 'Log in failed!' });
-    }
-});
-
+// Handle WebSocket connections
 wss.on('connection', (ws, req) => {
- 
+
     const username = new URLSearchParams(req.url.substring(1)).get('username');
 
     if (!username) {
@@ -66,126 +65,224 @@ wss.on('connection', (ws, req) => {
 
     console.log(`User ${username} connected.`);
 
+    ws.send(JSON.stringify({ sender: 'Server', message: `Welcome, ${username}!` }));
+    db.query(`SELECT ch.message, ch.timestamp, ch.sender_id, u.username AS sender_name, ch.receiver_id FROM chat_history ch JOIN users u ON ch.sender_id = u.id WHERE ch.sender_id = (SELECT id FROM users WHERE username = ?) OR ch.receiver_id = (SELECT id FROM users WHERE username = ?) ORDER BY ch.timestamp ASC;`, [username, username], (err, results) => {
+        if (err) {
+            console.error('Error fetching chat history:', err);
+            return;
+        }
+
+        ws.send(JSON.stringify({
+            sender: 'Server',
+            message: 'Here is your chat history:',
+            chatHistory: results
+        }));
+    });
+
+    // Fetch friends list from the database
+    db.query(
+        `SELECT u.username FROM users u WHERE u.id IN (
+            SELECT f.friend_id FROM friends f WHERE f.user_id = (SELECT id FROM users WHERE username = ?)
+        );`,
+        [username],
+        (err, friendResults) => {
+            if (err) {
+                console.error('Error fetching friends:', err);
+                return;
+            }
+
+            // Extract usernames and ensure the result is an array
+            const friends = Array.isArray(friendResults)
+                ? friendResults.map(friend => friend.username)
+                : [];
+
+            if (!Array.isArray(friends)) {
+                console.error('Friends list is not an array!!!!', friends); // Log the incorrect format
+                process.stdout.write('This is an alternative to console.logdfdfdsdfas\n');
+            } else {
+                console.log('Processed friends array:', friends); // Log the valid array
+                process.stdout.write('This is an alternative to console.log\n');
+            }
+
+            // Update the User instance with friends data
+            if (!users[username]) {
+                users[username] = new User(username, {}); // Ensure the User instance exists
+            }
+            users[username].friends = friends; // Assign the friends list
+
+            // Send the friends list to the connected client
+            ws.send(
+                JSON.stringify({
+                    sender: 'Server',
+                    message: 'Here is your friends list:',
+                    friends: friends, // Send the processed array
+                })
+            );
+        }
+    );
+
+
     // Handle incoming messages
-    ws.on('message', (message) => {
-        message = message.toString(); // Ensure message is a string
+    ws.on('message', (data) => {
+        try {
+            const parsedData = JSON.parse(data);
+            const { action, recipient, message, friendUsername } = parsedData;
 
-        console.log(`Received message from ${username}: ${message}`);
+            if (action === 'sendMessage') {
+                if (user.friends.includes(recipient)) {
+                    if (clients[recipient] && clients[recipient].readyState === WebSocket.OPEN) {
+                        clients[recipient].send(JSON.stringify({ sender: username, message }));
 
-        // Handle /dm command for direct messaging
-        if (message.startsWith('/dm')) {
-            const parts = message.split(' ');
-            const targetUser = parts[1]; // The recipient's username
-            const dmMessage = parts.slice(2).join(' '); // The message content
-
-            if (clients[targetUser]) {
-                // Send the message to the specific client
-                clients[targetUser].send(`${username}: ${dmMessage}`);
-                ws.send(`You sent a DM to ${targetUser}: ${dmMessage}`);
-            } else {
-                ws.send(`User ${targetUser} is not connected.`);
-            }
-        }
-
-        // Handle /create-group to create a new group
-        else if (message.startsWith('/create-group')) {
-            const groupName = message.split(' ')[1];
-
-            if (!groups[groupName]) {
-                groups[groupName] = {
-                    admin: username,
-                    members: [username],
-                    messages: []
-                };
-                ws.send(`Group '${groupName}' created. You are the admin.`);
-            } else {
-                ws.send(`Group '${groupName}' already exists.`);
-            }
-        }
-
-        // Handle /join to request joining a group
-        else if (message.startsWith('/join')) {
-            const groupName = message.split(' ')[1];
-
-            if (groups[groupName]) {
-                // Notify the admin of the request to join
-                const admin = groups[groupName].admin;
-                clients[admin].send(`${username} wants to join the group '${groupName}'. Use /add-member <username> to add them.`);
-                ws.send(`Your request to join '${groupName}' has been sent to the admin.`);
-            } else {
-                ws.send(`Group '${groupName}' does not exist.`);
-            }
-        }
-
-        // Handle /add-member to add a user to a group (only admin)
-        else if (message.startsWith('/add-member')) {
-            const groupName = message.split(' ')[1];
-            const newUser = message.split(' ')[2];
-
-            if (groups[groupName] && groups[groupName].admin === username) {
-                if (clients[newUser]) {
-                    groups[groupName].members.push(newUser);
-                    clients[newUser].send(`${username} has added you to the group '${groupName}'.`);
-                    ws.send(`You have added ${newUser} to '${groupName}'.`);
+                        // Save the chat history in the database
+                        db.query(
+                            'INSERT INTO chat_history (sender_id, receiver_id, message) SELECT (SELECT id FROM users WHERE username = ?), (SELECT id FROM users WHERE username = ?), ?',
+                            [username, recipient, message],
+                            (err) => {
+                                if (err) {
+                                    console.error('Error saving chat history:', err);
+                                }
+                            }
+                        );
+                    } else {
+                        ws.send(JSON.stringify({
+                            sender: 'Server',
+                            message: `User ${recipient} is not online.`,
+                        }));
+                    }
                 } else {
-                    ws.send(`User ${newUser} is not connected.`);
+                    ws.send(JSON.stringify({
+                        sender: 'Server',
+                        message: `You can only message your friends.`,
+                    }));
                 }
-            } else {
-                ws.send('You do not have permission to add members to this group.');
-            }
-        }
+            } else if (action === 'addFriend') {
+                    // Ensure the friend exists
+                    db.query('SELECT * FROM users WHERE username = ?', [friendUsername], (err, friendResults) => {
+                        if (err) {
+                            return ws.send(JSON.stringify({ sender: 'Server', message: 'Database error' }));
+                        }
 
-        // Handle /remove-member to remove a user from a group (only admin)
-        else if (message.startsWith('/remove-member')) {
-            const groupName = message.split(' ')[1];
-            const userToRemove = message.split(' ')[2];
+                        if (friendResults.length === 0) {
+                            return ws.send(JSON.stringify({
+                                sender: 'Server',
+                                message: `User ${friendUsername} does not exist.`
+                            }));
+                        }
+                        if (!users[friendUsername]) {
+                            users[friendUsername] = new User(friendUsername, []);  // Initialize with an empty friends array
+                        }
+                        // Add the friend to both users' friend lists
+                        db.query(
+                           'INSERT INTO friends (user_id, friend_id) SELECT (SELECT id FROM users WHERE username = ?), (SELECT id FROM users WHERE username = ?);',
+                            [friendUsername, username],
+                            (err) => {
+                                if (err) {
+                                    return ws.send(JSON.stringify({ sender: 'Server', message: 'Error adding friend' }));
+                                }
+                            }
+                        );
 
-            if (groups[groupName] && groups[groupName].admin === username) {
-                const index = groups[groupName].members.indexOf(userToRemove);
-                if (index !== -1) {
-                    groups[groupName].members.splice(index, 1);
-                    clients[userToRemove].send(`You have been removed from the group '${groupName}'.`);
-                    ws.send(`You have removed ${userToRemove} from '${groupName}'.`);
-                } else {
-                    ws.send(`${userToRemove} is not a member of the group.`);
-                }
-            } else {
-                ws.send('You do not have permission to remove members from this group.');
-            }
-        }
+                        db.query(
+                            'INSERT INTO friends (user_id, friend_id) SELECT (SELECT id FROM users WHERE username = ?), (SELECT id FROM users WHERE username = ?);',
+                            [username, friendUsername],
+                            (err) => {
+                                if (err) {
+                                    return ws.send(JSON.stringify({ sender: 'Server', message: 'Error adding friend' }));
+                                }
+                            }
+                        );
 
-        // Handle group messages, only send to group members
-        else if (message.startsWith('/group-message')) {
-            const parts = message.split(' ');
-            const groupName = parts[1];
-            const groupMessage = parts.slice(2).join(' ');
+                        user.friends.push(friendUsername);
+                        users[friendUsername].friends.push(username);
 
-            if (groups[groupName] && groups[groupName].members.includes(username)) {
-                groups[groupName].messages.push({ sender: username, message: groupMessage });
-                groups[groupName].members.forEach(member => {
-                    clients[member].send(`[Group ${groupName}] ${username}: ${groupMessage}`);
-                });
-            } else {
-                ws.send(`You are not a member of the group '${groupName}'.`);
-            }
-        }
+                        // Send the updated friends list to both users
+                        const updatedFriendsList = user.friends;
 
-        else {
-            ws.send('Unknown command.');
+                        // Send the updated friend list to the user who added the friend
+                        ws.send(JSON.stringify({
+                            sender: 'Server',
+                            message: `${friendUsername} added as a friend.`,
+                            friends: updatedFriendsList
+                        }));
+
+                        // Send the updated friend list to the friend who was added
+                        if (clients[friendUsername]) {
+                            clients[friendUsername].send(JSON.stringify({
+                                sender: 'Server',
+                                message: `${username} added you as a friend.`,
+                                friends: users[friendUsername].friends
+                            }));
+                        }
+                    });
+}
+
+        } catch (error) {
+            console.error('Error processing message:', error);
         }
     });
 
+    // Handle user disconnect
     ws.on('close', () => {
-        delete clients[username]; // Remove client when they disconnect
-        // Also remove client from any group they were part of
-        for (let groupName in groups) {
-            const group = groups[groupName];
-            const index = group.members.indexOf(username);
-            if (index !== -1) {
-                group.members.splice(index, 1);
-            }
-        }
+        delete clients[username];
+        console.log(`User ${username} disconnected.`);
     });
 });
 
-console.log('Server started on ws://localhost:5000');
+
+// Simplified registration endpoint with MySQL
+app.post('/register', (req, res) => {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+        return res.status(400).json({ success: false, message: 'Please complete the registration form!' });
+    }
+
+    // Check if the username already exists
+    db.query('SELECT * FROM users WHERE username = ?', [username], (err, results) => {
+        if (err) {
+            console.error('Error checking username:', err);
+            return res.status(500).json({ success: false, message: 'Database error' });
+        }
+
+        if (results.length > 0) {
+            return res.status(400).json({ success: false, message: 'Username already exists.' });
+        }
+
+        // Hash the password before saving it
+        bcrypt.hash(password, 10, (err, hashedPassword) => {
+            if (err) {
+                console.error('Error hashing password:', err);
+                return res.status(500).json({ success: false, message: 'Error hashing password' });
+            }
+
+            // Insert the new user into the database
+            db.query('INSERT INTO users (username, password) VALUES (?, ?)', [username, hashedPassword], (err) => {
+                if (err) {
+                    console.error('Error inserting user:', err);
+                    return res.status(500).json({ success: false, message: 'Error inserting user into the database' });
+                }
+
+                res.status(201).json({ success: true, message: 'Registration successful!' });
+            });
+        });
+    });
+});
+
+
+// Simplified login endpoint with MySQL
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+
+    // Authenticate user (this is just an example, you should use proper authentication)
+    db.query('SELECT * FROM users WHERE username = ?', [username], (err, results) => {
+        if (err) {
+            return res.status(500).json({ success: false, message: 'Database error' });
+        }
+
+        if (results.length === 0 || !bcrypt.compareSync(password, results[0].password)) {
+            return res.status(401).json({ success: false, message: 'Invalid credentials' });
+        }
+
+        res.status(200).json({ success: true, message: 'Login successful!' });
+    });
+});
